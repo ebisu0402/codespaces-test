@@ -7,17 +7,28 @@ class Game
     @monsters = create_monsters
     @escape_flg = false
 
-    display_character_info(@heroes)
-    display_character_info(@monsters)
+    @heroes.each do |hero|
+      display_character_info(hero)
+    end
+
+    @monsters.each do |monster|
+      display_character_info(monster)
+    end
     
   end
 
   def create_heroes(hero_name)
-    Character.new(hero_name, 30, 6, Constants::ATTACK_TYPE_NORMAL, true) 
+    [
+      Character.new(hero_name, 30, 6, Constants::ATTACK_TYPE_NORMAL, true), 
+      Character.new("魔法使い", 20, 8, Constants::ATTACK_TYPE_MAGIC) 
+    ]
   end
 
   def create_monsters
-    Character.new('オーク', 30, 8, Constants::ATTACK_TYPE_NORMAL)  
+    [
+      Character.new('オーク', 30, 8, Constants::ATTACK_TYPE_NORMAL),
+      Character.new('ゴブリン', 25, 6, Constants::ATTACK_TYPE_NORMAL)  
+    ]
   end
 
   def display_character_info(character)
@@ -29,35 +40,66 @@ class Game
     puts "生存フラグ：#{character.is_alive}"
   end
   
-  def display_status
-    puts"[#{@heroes.name} HP: #{@heroes.hp} 攻撃力: #{@heroes.attack_damage}]"
-    puts"[#{@monsters.name} HP: #{@monsters.hp} 攻撃力: #{@monsters.attack_damage}]"
-
+  def display_status(character)
+    puts "・【#{character.name}】 HP：#{character.hp} こうげき力：#{character.attack_damage}"
   end
 
-  def process_heroes_turn
-    loop do
-      puts"\n↓行動を選択してください"
-      puts"[#{Constants::ACTTION_ATTACK}]こうげき"
-      puts"[#{Constants::ACTTION_ESCAPE}]にげる"
-      choice = gets.to_i
 
-      case choice
-      when Constants::ACTTION_ATTACK
-        execute_attack(@heroes, @monsters)
-        break
-      when Constants::ACTTION_ESCAPE
-        execute_escape(@heroes)
-        return
-      else
-        puts "無効な選択肢です"
+def process_heroes_turn
+    @heroes.each do |character|    #　@heroesの各オブジェクトを呼び出す
+      next unless character.is_alive    # is_aliveがfalseなら以下の処理を行わない
+      loop do
+        # 行動選択
+        if character.is_player
+          # プレイヤー（勇者）のとき
+          puts "\n↓行動を選択してください↓"
+          puts "【#{Constants::ACTION_ATTACK}】こうげき"
+          puts "【#{Constants::ACTION_ESCAPE}】逃げる"
+
+          choice = gets.to_i  # 行動の入力を整数で受け付ける
+        else
+          # それ以外のとき
+          choice = Constants::ACTION_ATTACK # デフォルトの選択
+        end
+
+        # 行動
+        case choice
+        when Constants::ACTION_ATTACK
+          # こうげき
+          target_character = @monsters.select(&:is_alive).sample            # 対象を絞る
+          execute_attack(character, target_character) if target_character   # こうげき処理
+          break   # ループを抜ける
+        when Constants::ACTION_ESCAPE
+          # 逃げる
+          execute_escape(character)   # 逃げる処理
+          return  # メソッドを抜ける
+        else
+          # 無効な選択
+          puts "無効な選択肢です"
+        end
       end
     end
+  end 
+  def process_monsters_turn
+    @monsters.each do |monster|
+      target_hero = nil
+      @heroes.each do |hero|
+        if hero.is_alive
+          target_hero = hero
+            break
+          end
+        end
+
+        if target_hero
+          execute_attack(monster, target_hero)
+        end
+      end
+end
+  def party_destroyed?(party)
+    party.all? { |member| !member.is_alive }
   end
 
-  def process_monsters_turn
-  execute_attack(@monsters,@heroes)
-  end
+
 
   def execute_attack(attacker, defender)
     case attacker.attack_type
@@ -82,21 +124,36 @@ class Game
 
 
   def start
+    round = 0
     puts"\n◆◆◆ モンスターが現れた!! ◆◆◆"
 
-    display_status()
+    loop do
+      round += 1
+      puts"\n=== ラウンド #{round} ==="
+
+    @heroes.each { |character| display_status(character) }    
+    @monsters.each { |character| display_status(character) } 
+    
+      
     process_heroes_turn()
-    if @escape_flg
-      return 
-    end
-    process_monsters_turn()
+    return if @escape_flg
+
+    break if party_destroyed?(@heroes) || party_destroyed?(@monsters)
+
+    process_monsters_turn
+    break if party_destroyed?(@heroes) || party_destroyed?(@monsters)
+  end
+  if party_destroyed?(@monsters)
+    puts "勇者パーティの勝利!!"
+  elsif party_destroyed?(@heroes)
+    puts "勇者達は力尽きた…"
   end
 
-
-
-
-private
+  puts "◆◆◆ GAME OVER...◆◆◆"
 end
+end
+
+
 
 class Character
     attr_accessor :name, :hp, :attack_damage, :attack_type, :is_player, :is_alive
@@ -129,8 +186,8 @@ end
     ATTACK_TYPE_MAGIC = 2
     ATTACK_VARIANCE = 3
     HP_MIN = 0
-    ACTTION_ATTACK = 1
-    ACTTION_ESCAPE = 2
+    ACTION_ATTACK = 1
+    ACTION_ESCAPE = 2
 end
 
 
