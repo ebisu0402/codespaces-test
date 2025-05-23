@@ -131,9 +131,10 @@ end
       round += 1
       puts"\n=== ラウンド #{round} ==="
 
-    @heroes.each { |character| display_status(character) }    
+    @heroes.each { |character| display_status(character) }  
+    sleep(1)  
     @monsters.each { |character| display_status(character) } 
-    
+    sleep(1)
       
     process_heroes_turn()
     return if @escape_flg
