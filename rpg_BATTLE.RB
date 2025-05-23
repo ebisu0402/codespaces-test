@@ -105,15 +105,19 @@ end
     case attacker.attack_type
     when Constants::ATTACK_TYPE_NORMAL
       puts "#{attacker.name}のこうげき!!"
+      sleep(0.5)
     when Constants::ATTACK_TYPE_MAGIC
       puts "#{attacker.name}の魔法こうげき!!"
+      sleep(0.5)
     end
 
     damage = attacker.calculate_damage()
     defender.receive_damage(damage)
 
     puts "#{defender.name}に#{damage}のダメージ!!"
+    sleep(0.3)
     puts "#{defender.name}はたおれた!" unless defender.is_alive
+    sleep(0.3)
 
   end 
 
@@ -132,9 +136,7 @@ end
       puts"\n=== ラウンド #{round} ==="
 
     @heroes.each { |character| display_status(character) }  
-    sleep(1)  
     @monsters.each { |character| display_status(character) } 
-    sleep(1)
       
     process_heroes_turn()
     return if @escape_flg
